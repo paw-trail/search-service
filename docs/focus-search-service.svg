@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1860" height="960" viewBox="0 0 1860 960" font-family="Noto Sans CJK KR, 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">
+<defs><marker id="ah-374151" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#374151"/></marker><marker id="as-374151" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#374151"/></marker><marker id="ah-3B82F6" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#3B82F6"/></marker><marker id="as-3B82F6" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#3B82F6"/></marker><marker id="ah-6366F1" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#6366F1"/></marker><marker id="as-6366F1" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#6366F1"/></marker><marker id="ah-16A34A" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#16A34A"/></marker><marker id="as-16A34A" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#16A34A"/></marker><marker id="ah-F97316" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#F97316"/></marker><marker id="as-F97316" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#F97316"/></marker><marker id="ah-A855F7" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#A855F7"/></marker><marker id="as-A855F7" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#A855F7"/></marker><marker id="ah-9CA3AF" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#9CA3AF"/></marker><marker id="as-9CA3AF" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#9CA3AF"/></marker><marker id="ah-D97706" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#D97706"/></marker><marker id="as-D97706" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#D97706"/></marker><marker id="ah-111827" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0,0 L11,4.5 L0,9 z" fill="#111827"/></marker><marker id="as-111827" markerWidth="11" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M11,0 L0,4.5 L11,9 z" fill="#111827"/></marker></defs><rect width="1860" height="960" fill="#FFFFFF"/>
+<rect x="622.0" y="387.0" width="396" height="126" rx="18" fill="none" stroke="#22C55E" stroke-width="3" opacity="0.5"/>
+<rect x="630.0" y="395.0" width="380" height="110" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="3.5"/>
+<text x="820" y="428" font-size="22" font-weight="bold" text-anchor="middle" fill="#111827">search-service  :8087</text>
+<text x="820" y="448" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">place 를 옮겨 담은 색인으로 찾음</text>
+<text x="820" y="464" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">API 7개  (공개 6 · 관리자 1) · 판정은 verdict 에 물음</text>
+<text x="622.0" y="381.0" font-size="13" font-weight="bold" text-anchor="start" fill="#22C55E">이 레포</text>
+<rect x="55.0" y="255.0" width="250" height="90" rx="12" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2.2"/>
+<text x="180" y="278" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">gateway-server</text>
+<text x="180" y="298" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">토큰 검증</text>
+<text x="180" y="314" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">X-User-Id · X-User-Role 주입</text>
+<rect x="55.0" y="495.0" width="250" height="90" rx="12" fill="#FFEDD5" stroke="#F97316" stroke-width="2.2"/>
+<text x="180" y="518" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">Kafka</text>
+<text x="180" y="538" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">place.updated 를 받음</text>
+<text x="180" y="554" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">묶어서 500건씩 · earliest</text>
+<rect x="55.0" y="725.0" width="250" height="90" rx="12" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2.2"/>
+<text x="180" y="748" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">verdict-service</text>
+<text x="180" y="768" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">카드마다 반려동물별 판정</text>
+<text x="180" y="784" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">충돌 · 준비물 · 한 줄 근거</text>
+<rect x="660.0" y="80.0" width="320" height="80" rx="12" fill="#E0E7FF" stroke="#6366F1" stroke-width="2.2"/>
+<text x="820" y="106" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">config-server</text>
+<text x="820" y="126" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">재색인 시각 · 잠금 만료</text>
+<rect x="1410.0" y="80.0" width="300" height="80" rx="12" fill="#E0E7FF" stroke="#6366F1" stroke-width="2.2"/>
+<text x="1560" y="106" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">eureka-server</text>
+<text x="1560" y="126" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">등록 · lb:// 해석</text>
+<rect x="1410.0" y="240.0" width="300" height="100" rx="12" fill="#FFEDD5" stroke="#F97316" stroke-width="2.2"/>
+<text x="1560" y="268" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">PostgreSQL  search_db</text>
+<text x="1560" y="288" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">search_index 한 표 · 24칸</text>
+<text x="1560" y="304" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">이름 트라이그램 · 좌표 · 소개문 인덱스</text>
+<rect x="1410.0" y="415.0" width="300" height="90" rx="12" fill="#FFEDD5" stroke="#F97316" stroke-width="2.2"/>
+<text x="1560" y="438" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">Redis</text>
+<text x="1560" y="458" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">조회수 — 전국 · 시도 열쇠</text>
+<text x="1560" y="474" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">재색인 잠금  (만료 30분)</text>
+<rect x="1410.0" y="585.0" width="300" height="90" rx="12" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2.2"/>
+<text x="1560" y="608" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">place-service</text>
+<text x="1560" y="628" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">색인용 조회</text>
+<text x="1560" y="644" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">ids 100 · 이어받기 500</text>
+<rect x="1410.0" y="755.0" width="300" height="90" rx="12" fill="#FFFFFF" stroke="#9CA3AF" stroke-width="2.2" stroke-dasharray="9,7"/>
+<text x="1560" y="778" font-size="17" font-weight="bold" text-anchor="middle" fill="#111827">review-service</text>
+<text x="1560" y="798" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">평점 · 후기 수를 100곳씩</text>
+<text x="1560" y="814" font-size="12" font-weight="normal" text-anchor="middle" fill="#4B5563">아직 없음 — 그동안 평점은 비어 있음</text>
+<polyline points="305.0,300 470,300 470,420 630,420" fill="none" stroke="#3B82F6" stroke-width="2.4" marker-end="url(#ah-3B82F6)"/>
+<rect x="314" y="276" width="306" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="318" y="288" font-size="13" font-weight="normal" text-anchor="start" fill="#3B82F6">검색 · 카운트 · 자동완성 · 인기 · 지역 · 관리자 재색인</text>
+<polyline points="305.0,540 520,540 520,460 630,460" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#ah-F97316)"/>
+<rect x="314" y="516" width="97" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="318" y="528" font-size="13" font-weight="normal" text-anchor="start" fill="#F97316">place.updated</text>
+<polyline points="630,490 580,490 580,770 305.0,770" fill="none" stroke="#16A34A" stroke-width="2.4" marker-end="url(#ah-16A34A)"/>
+<rect x="314" y="746" width="242" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="318" y="758" font-size="13" font-weight="normal" text-anchor="start" fill="#16A34A">POST /internal/verdicts/batch  500곳씩</text>
+<polyline points="820,160.0 820,395.0" fill="none" stroke="#6366F1" stroke-width="2.4" marker-end="url(#ah-6366F1)"/>
+<rect x="782" y="258" width="76" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="820.0" y="269.5" font-size="13" font-weight="normal" text-anchor="middle" fill="#6366F1">기동 시 설정</text>
+<polyline points="1010,410 1110,410 1110,120 1410.0,120" fill="none" stroke="#6366F1" stroke-width="2.4" marker-end="url(#ah-6366F1)"/>
+<rect x="1118" y="193" width="34" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="1122" y="205" font-size="13" font-weight="normal" text-anchor="start" fill="#6366F1">등록</text>
+<polyline points="1010,435 1150,435 1150,290 1410.0,290" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#ah-F97316)"/>
+<rect x="1158" y="343" width="123" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="1162" y="355" font-size="13" font-weight="normal" text-anchor="start" fill="#F97316">JDBC · Flyway V20</text>
+<polyline points="1010,460 1410,460" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#ah-F97316)"/>
+<rect x="1191" y="438" width="119" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="1250" y="450" font-size="13" font-weight="normal" text-anchor="middle" fill="#F97316">ZINCRBY · SET NX</text>
+<polyline points="1010,485 1230,485 1230,630 1410.0,630" fill="none" stroke="#16A34A" stroke-width="2.4" marker-end="url(#ah-16A34A)"/>
+<rect x="1238" y="553" width="191" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="1242" y="565" font-size="13" font-weight="normal" text-anchor="start" fill="#16A34A">GET /internal/places/indexing</text>
+<polyline points="1010,500 1190,500 1190,800 1410.0,800" fill="none" stroke="#9CA3AF" stroke-width="2.4" marker-end="url(#ah-9CA3AF)" stroke-dasharray="7,6"/>
+<rect x="1238" y="733" width="175" height="19" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="1242" y="745" font-size="13" font-weight="normal" text-anchor="start" fill="#9CA3AF">GET /internal/reviews/stats</text>
+<text x="40" y="880" font-size="13" font-weight="normal" text-anchor="start" fill="#4B5563">색인에는 동반 조건이 없음 — 카드마다 verdict 에 물어 붙임 · 판정 필터 · 탐색 카운트는 후보 전부를 500곳씩 판정 (전국 3.3초 · 서울 0.56초)</text>
+<text x="40" y="902" font-size="13" font-weight="normal" text-anchor="start" fill="#4B5563">place.updated 를 받거나 매일 04:00 재색인 때 place 에서 다시 읽어 덮어씀 — place 수정 시각이 더 새 것만 쓰므로 같은 이벤트가 두 번 와도 결과가 같음</text>
+<text x="40" y="924" font-size="13" font-weight="normal" text-anchor="start" fill="#4B5563">이름 차례는 ko-x-icu — DB 기본 정렬이 한글을 글자 수로 세움 · 조회수는 Redis 에만 · 두 대로 떠도 재색인은 잠금으로 한 번만 돎</text>
+<text x="1836" y="948" font-size="11" text-anchor="end" fill="#9CA3AF">search-service 를 중심으로 · 직접 연결된 것만</text></svg>
