@@ -1,4 +1,4 @@
-package com.pawtrail.template;
+package com.pawtrail.search;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -30,11 +30,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * org.springframework.boot.autoconfigure.domain에서 현재 위치로 옮겨졌습니다.
  */
 @SpringBootApplication
-@EntityScan(basePackages = {"com.pawtrail.template", "com.pawtrail.common"})
-@EnableJpaRepositories(basePackages = {"com.pawtrail.template", "com.pawtrail.common"})
-public class TemplateApplication {
+@EntityScan(basePackages = {"com.pawtrail.search", "com.pawtrail.common"})
+@EnableJpaRepositories(basePackages = {"com.pawtrail.search", "com.pawtrail.common"})
+public class SearchApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(TemplateApplication.class, args);
+        SpringApplication.run(SearchApplication.class, args);
     }
 }
