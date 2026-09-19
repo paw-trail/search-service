@@ -3,11 +3,14 @@ package com.pawtrail.search.domain.repository;
 import com.pawtrail.search.domain.enums.SearchSort;
 import com.pawtrail.search.domain.model.IndexedCard;
 import com.pawtrail.search.domain.model.IndexedPlace;
+import com.pawtrail.search.domain.model.RegionCount;
 import com.pawtrail.search.domain.model.ReviewStats;
 import com.pawtrail.search.domain.model.SearchFilter;
+import com.pawtrail.search.domain.model.Suggestion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -75,7 +78,28 @@ public interface SearchIndexRepository {
     /**
      * 장소들의 카드 값입니다. 위치가 있으면 거리를 함께 셉니다.
      *
+     * 폐업한 장소는 빠집니다. 인기 급상승처럼 색인 밖(조회수)에서 온 식별자를 넘길 때가 있어서입니다.
+     *
      * @return 장소 식별자로 찾는 카드입니다. 차례는 부르는 쪽이 맞춥니다.
      */
     Map<UUID, IndexedCard> findCards(Collection<UUID> placeIds, SearchFilter filter);
+
+    /**
+     * 자동완성입니다. 이름이나 별칭이 검색어로 시작하는 곳을 먼저, 모자라면 검색어가 들어 있는 곳으로 채웁니다(search ㉽).
+     *
+     * 폐업한 장소는 뺍니다. 각 무리 안에서는 이름의 가나다순입니다.
+     */
+    List<Suggestion> suggest(String query, int limit);
+
+    /**
+     * 색인에 있는 장소의 시도 코드입니다. 조회수를 시도 열쇠에도 올릴 때 씁니다.
+     *
+     * @return 색인에 없으면 비어 있습니다. 있는데 시도를 모르면 빈 글자입니다.
+     */
+    Optional<String> findSidoCode(UUID placeId);
+
+    /**
+     * 시도 · 시군구마다 폐업을 뺀 장소 수입니다. 시도 코드 · 시군구 이름의 가나다순입니다.
+     */
+    List<RegionCount> countByRegion();
 }

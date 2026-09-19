@@ -7,7 +7,9 @@ import com.pawtrail.common.response.PageResponse;
 import com.pawtrail.search.application.dto.input.SearchCommand;
 import com.pawtrail.search.application.dto.output.SearchCardOutput;
 import com.pawtrail.search.application.dto.output.SearchSummaryOutput;
+import com.pawtrail.search.application.dto.output.SuggestionOutput;
 import com.pawtrail.search.application.service.SearchService;
+import com.pawtrail.search.application.service.SuggestService;
 import com.pawtrail.search.domain.enums.SearchSort;
 import com.pawtrail.search.domain.enums.Verdict;
 import com.pawtrail.search.domain.model.SearchFilter;
@@ -36,6 +38,7 @@ public class SearchController {
     private static final int DEFAULT_RADIUS_M = 20_000;
 
     private final SearchService searchService;
+    private final SuggestService suggestService;
 
     /**
      * 장소를 검색합니다. 카드마다 반려동물별 판정이 붙습니다.
@@ -81,6 +84,14 @@ public class SearchController {
                 filterOf(q, sidoCode, sigunguName, lat, lon, radius, placeTypes, facilities),
                 List.of(), petIds, null, 0, 1);
         return ResponseEntity.ok(CommonApiResponse.success(searchService.summarize(command)));
+    }
+
+    /**
+     * 자동완성 — 이름 · 별칭이 검색어로 시작하는 곳 먼저, 모자라면 들어 있는 곳으로 채워 10곳까지입니다(search ㉽).
+     */
+    @GetMapping("/suggest")
+    public ResponseEntity<CommonApiResponse<List<SuggestionOutput>>> suggest(@RequestParam(required = false) String q) {
+        return ResponseEntity.ok(CommonApiResponse.success(suggestService.suggest(q)));
     }
 
     // 검색어는 띄어쓰기로 나눔, 빈 값은 조건이 없는 것으로 봄

@@ -4,8 +4,10 @@ import com.pawtrail.common.audit.AuditorProvider;
 import com.pawtrail.search.domain.enums.SearchSort;
 import com.pawtrail.search.domain.model.IndexedCard;
 import com.pawtrail.search.domain.model.IndexedPlace;
+import com.pawtrail.search.domain.model.RegionCount;
 import com.pawtrail.search.domain.model.ReviewStats;
 import com.pawtrail.search.domain.model.SearchFilter;
+import com.pawtrail.search.domain.model.Suggestion;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
@@ -13,7 +15,9 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -207,7 +211,7 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
         // 표시 주소는 도로명, 없으면 지번 — place 상세와 같은 규칙
         String sql = "SELECT place_id, name, place_type, COALESCE(address_road, address_jibun) AS address, image_url, "
                 + distance + " AS distance_m, rating_avg, review_count, data_base_date"
-                + " FROM search_index WHERE place_id IN (:placeIds)";
+                + " FROM search_index WHERE place_id IN (:placeIds) AND status = 'ACTIVE'";
 
         Map<UUID, IndexedCard> cards = new HashMap<>();
         jdbcTemplate.query(sql, params, rs -> {
@@ -225,6 +229,59 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
             cards.put(card.placeId(), card);
         });
         return cards;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Suggestion> suggest(String query, int limit) {
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("prefix", SearchSql.escapeLike(query) + "%")
+                .addValue("like", "%" + SearchSql.escapeLike(query) + "%")
+                .addValue("limit", limit);
+
+        // 이름이나 별칭이 검색어로 시작하는 곳
+        String startsWith = "(name ILIKE :prefix ESCAPE '\\'"
+                + " OR EXISTS (SELECT 1 FROM unnest(name_alias) AS alias WHERE alias ILIKE :prefix ESCAPE '\\'))";
+        // 이름이나 별칭에 검색어가 들어 있는 곳
+        String contains = "(name ILIKE :like ESCAPE '\\'"
+                + " OR EXISTS (SELECT 1 FROM unnest(name_alias) AS alias WHERE alias ILIKE :like ESCAPE '\\'))";
+        String select = "SELECT place_id, name, place_type, sigungu_name FROM search_index WHERE status = 'ACTIVE' AND ";
+        String order = " ORDER BY " + SearchSql.NAME_ORDER + ", place_id LIMIT :limit";
+
+        List<Suggestion> suggestions = new ArrayList<>(
+                jdbcTemplate.query(select + startsWith + order, params, SearchIndexRepositoryImpl::suggestion));
+        if (suggestions.size() < limit) {
+            // 모자라면 앞부분이 아닌 부분 일치로 채움 — 앞의 무리와 겹치지 않게 뺌
+            params.addValue("limit", limit - suggestions.size());
+            suggestions.addAll(jdbcTemplate.query(select + contains + " AND NOT " + startsWith + order,
+                    params, SearchIndexRepositoryImpl::suggestion));
+        }
+        return suggestions;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<String> findSidoCode(UUID placeId) {
+        List<String> found = jdbcTemplate.queryForList(
+                "SELECT COALESCE(sido_code, '') FROM search_index WHERE place_id = :placeId",
+                new MapSqlParameterSource("placeId", placeId), String.class);
+        return found.stream().findFirst();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RegionCount> countByRegion() {
+        String sql = "SELECT sido_code, sigungu_name, count(*) AS place_count FROM search_index"
+                + " WHERE status = 'ACTIVE' AND sido_code IS NOT NULL"
+                + " GROUP BY sido_code, sigungu_name"
+                + " ORDER BY sido_code, sigungu_name COLLATE \"ko-x-icu\"";
+        return jdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> new RegionCount(
+                rs.getString("sido_code"), rs.getString("sigungu_name"), rs.getLong("place_count")));
+    }
+
+    private static Suggestion suggestion(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
+        return new Suggestion(rs.getObject("place_id", UUID.class), rs.getString("name"),
+                rs.getString("place_type"), rs.getString("sigungu_name"));
     }
 
     private static SqlParameterSource parameters(IndexedPlace place, LocalDateTime now, String actor) {

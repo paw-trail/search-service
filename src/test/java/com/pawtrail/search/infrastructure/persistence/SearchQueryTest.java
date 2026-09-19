@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.pawtrail.search.domain.enums.SearchSort;
 import com.pawtrail.search.domain.model.IndexedCard;
 import com.pawtrail.search.domain.model.IndexedPlace;
+import com.pawtrail.search.domain.model.RegionCount;
 import com.pawtrail.search.domain.model.SearchFilter;
+import com.pawtrail.search.domain.model.Suggestion;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -146,6 +148,40 @@ class SearchQueryTest {
         assertThat(cards.get(YEOUIDO).distanceM()).isZero();
         assertThat(cards.get(CAFE).distanceM()).isBetween(2_500L, 3_000L);
         assertThat(searchIndexRepository.findCards(List.of(YEOUIDO), noFilter()).get(YEOUIDO).distanceM()).isNull();
+    }
+
+    @Test
+    @DisplayName("이름순은 가나다다 — 컨테이너의 기본 정렬(en_US)이 한글을 글자 수로 세워도 쿼리가 규칙을 정한다")
+    void 이름순은_가나다() {
+        assertThat(searchIndexRepository.findAllIds(noFilter(), SearchSort.NAME))
+                .containsExactly(CAFE, SONGPA, YEOUIDO, VET, HAEUNDAE);
+    }
+
+    @Test
+    @DisplayName("자동완성은 이름 · 별칭이 검색어로 시작하는 곳을 먼저, 모자라면 들어 있는 곳으로 채우고 폐업은 뺀다")
+    void 자동완성() {
+        assertThat(searchIndexRepository.suggest("한강", 10))
+                .extracting(Suggestion::placeId)
+                .containsExactly(VET, YEOUIDO);
+        assertThat(searchIndexRepository.suggest("여의도공", 10))
+                .extracting(Suggestion::placeId)
+                .containsExactly(YEOUIDO);
+        assertThat(searchIndexRepository.suggest("문닫", 10)).isEmpty();
+        assertThat(searchIndexRepository.suggest("공원", 1)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("지역 수는 폐업을 빼고 시군구 가나다로, 시도 코드는 색인에 있을 때만 준다")
+    void 지역_수와_시도_코드() {
+        assertThat(searchIndexRepository.countByRegion()).containsExactly(
+                new RegionCount("11", "마포구", 1),
+                new RegionCount("11", "송파구", 1),
+                new RegionCount("11", "영등포구", 2),
+                new RegionCount("26", "해운대구", 1));
+        assertThat(searchIndexRepository.findSidoCode(YEOUIDO)).contains("11");
+        assertThat(searchIndexRepository.findSidoCode(place(99))).isEmpty();
+        // 인기 급상승은 조회수에서 온 식별자로 카드를 읽음 — 폐업한 곳은 빠져야 함
+        assertThat(searchIndexRepository.findCards(List.of(CLOSED, YEOUIDO), noFilter())).containsOnlyKeys(YEOUIDO);
     }
 
     private List<UUID> ids(String q) {

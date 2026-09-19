@@ -24,6 +24,11 @@ final class SearchSql {
     // 위치가 있을 때 거리를 재는 기준점 — ST_MakePoint 는 (경도, 위도) 순서임
     static final String POINT = "CAST(ST_SetSRID(ST_MakePoint(:lon, :lat), 4326) AS geography)";
 
+    // 이름을 가나다로 세우는 규칙 (search ㉫)
+    // DB 기본 정렬(en_US.utf8)은 한글 음절을 1단계 비교에서 무시해 글자 수가 먼저 오는 차례가 됨
+    // ICU 한국어 규칙은 한글을 가나다로, 한글을 영문보다 앞에 세움
+    static final String NAME_ORDER = "name COLLATE \"ko-x-icu\"";
+
     // tsquery 에 넣을 낱말에서 글자 · 숫자가 아닌 것을 걷어 냄 — & | ! ( ) : * 가 연산자라서
     private static final Pattern NOT_WORD = Pattern.compile("[^\\p{L}\\p{N}]+");
 
@@ -91,14 +96,14 @@ final class SearchSql {
      */
     static String orderBy(SearchSort sort) {
         return switch (sort) {
-            case DISTANCE -> "ST_Distance(geom, " + POINT + "), name, place_id";
-            case RATING -> "rating_avg DESC NULLS LAST, review_count DESC, name, place_id";
-            case POPULAR, NAME -> "name, place_id";
+            case DISTANCE -> "ST_Distance(geom, " + POINT + "), " + NAME_ORDER + ", place_id";
+            case RATING -> "rating_avg DESC NULLS LAST, review_count DESC, " + NAME_ORDER + ", place_id";
+            case POPULAR, NAME -> NAME_ORDER + ", place_id";
         };
     }
 
     // LIKE 의 특수 문자를 글자 그대로로 — ESCAPE '\' 와 짝
-    private static String escapeLike(String word) {
+    static String escapeLike(String word) {
         return word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }
