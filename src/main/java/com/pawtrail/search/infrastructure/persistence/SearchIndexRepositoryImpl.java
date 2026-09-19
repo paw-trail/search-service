@@ -2,9 +2,12 @@ package com.pawtrail.search.infrastructure.persistence;
 
 import com.pawtrail.common.audit.AuditorProvider;
 import com.pawtrail.search.domain.model.IndexedPlace;
+import com.pawtrail.search.domain.model.ReviewStats;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -72,6 +75,25 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
             WHERE search_index.place_updated_at < EXCLUDED.place_updated_at
             """;
 
+    // 평점만 갈아 끼움, place 에서 온 칸과 place 수정 시각은 SET 에 없음
+    // 값이 같으면 쓰지 않아 바뀐 곳만 셈 — IS DISTINCT FROM 은 null 끼리도 같다고 봄
+    private static final String UPDATE_REVIEW_STATS = """
+            UPDATE search_index
+            SET rating_avg   = :ratingAvg,
+                review_count = :reviewCount,
+                updated_at   = :now,
+                updated_by   = :actor
+            WHERE place_id = :placeId
+              AND (rating_avg IS DISTINCT FROM :ratingAvg OR review_count <> :reviewCount)
+            """;
+
+    // 한 바퀴 동안 본 장소 밖의 행을 셈, 지우지 않음
+    // 식별자를 글자 배열로 넘기고 SQL 이 uuid 배열로 바꿈
+    private static final String COUNT_OUTSIDE = """
+            SELECT count(*) FROM search_index
+            WHERE NOT (place_id = ANY(CAST(:placeIds AS uuid[])))
+            """;
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final AuditorProvider auditorProvider;
 
@@ -96,6 +118,41 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
             }
         }
         return written;
+    }
+
+    @Override
+    @Transactional
+    public int updateReviewStats(List<ReviewStats> stats) {
+        if (stats.isEmpty()) {
+            return 0;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String actor = auditorProvider.current();
+        SqlParameterSource[] batch = stats.stream()
+                .map(stat -> new MapSqlParameterSource()
+                        .addValue("placeId", stat.placeId())
+                        .addValue("ratingAvg", stat.ratingAvg())
+                        .addValue("reviewCount", stat.reviewCount())
+                        .addValue("now", now)
+                        .addValue("actor", actor))
+                .toArray(SqlParameterSource[]::new);
+
+        int changed = 0;
+        for (int count : jdbcTemplate.batchUpdate(UPDATE_REVIEW_STATS, batch)) {
+            if (count > 0) {
+                changed += count;
+            }
+        }
+        return changed;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countOutside(Collection<UUID> placeIds) {
+        String[] ids = placeIds.stream().map(UUID::toString).toArray(String[]::new);
+        Long count = jdbcTemplate.queryForObject(COUNT_OUTSIDE, new MapSqlParameterSource("placeIds", ids), Long.class);
+        return count == null ? 0 : count;
     }
 
     private static SqlParameterSource parameters(IndexedPlace place, LocalDateTime now, String actor) {

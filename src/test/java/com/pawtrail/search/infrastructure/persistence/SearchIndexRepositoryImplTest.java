@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 import com.pawtrail.search.domain.model.IndexedPlace;
+import com.pawtrail.search.domain.model.ReviewStats;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -154,6 +155,42 @@ class SearchIndexRepositoryImplTest {
         assertThat(row.get("address_road")).isNull();
         assertThat(row.get("empty_facilities")).isEqualTo(true);
         assertThat(row.get("status")).isEqualTo("CLOSED");
+    }
+
+    @Test
+    @DisplayName("평점을 갈아 끼우되 place 에서 온 칸은 두고, 같은 값이면 쓰지 않는다")
+    void 평점_갈아_끼우기() {
+        searchIndexRepository.saveAllIfNewer(List.of(yeouido("여의도한강공원", T1), other(PLACE_B)));
+
+        // B 는 이미 평점 없음 · 0 이라 안 씀 · C 는 색인에 없음
+        int changed = searchIndexRepository.updateReviewStats(List.of(
+                new ReviewStats(PLACE_A, new BigDecimal("4.5"), 3),
+                ReviewStats.none(PLACE_B),
+                new ReviewStats(PLACE_C, new BigDecimal("3.0"), 1)));
+
+        Map<String, Object> row = jdbcTemplate.queryForMap(
+                "SELECT rating_avg, review_count, name, place_updated_at FROM search_index WHERE place_id = ?", PLACE_A);
+        assertThat(changed).isEqualTo(1);
+        assertThat((BigDecimal) row.get("rating_avg")).isEqualByComparingTo("4.5");
+        assertThat(row.get("review_count")).isEqualTo(3);
+        assertThat(row.get("name")).isEqualTo("여의도한강공원");
+        // 평점을 바꿔도 place 수정 시각이 안 바뀌어야 다음 이벤트의 덮어쓰기 판단이 흔들리지 않음
+        assertThat(row.get("place_updated_at").toString()).startsWith("2026-09-11 19:48:47.915252");
+
+        assertThat(searchIndexRepository.updateReviewStats(List.of(
+                new ReviewStats(PLACE_A, new BigDecimal("4.5"), 3)))).isZero();
+        // 후기가 모두 지워지면 옛 평점이 남지 않게 되돌림
+        assertThat(searchIndexRepository.updateReviewStats(List.of(ReviewStats.none(PLACE_A)))).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("한 바퀴에서 못 본 행을 세기만 하고 지우지 않는다")
+    void 못_본_행은_세기만() {
+        searchIndexRepository.saveAllIfNewer(List.of(yeouido("여의도한강공원", T1), other(PLACE_B)));
+
+        assertThat(searchIndexRepository.countOutside(List.of(PLACE_A))).isEqualTo(1L);
+        assertThat(searchIndexRepository.countOutside(List.of(PLACE_A, PLACE_B))).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM search_index", Integer.class)).isEqualTo(2);
     }
 
     @Test

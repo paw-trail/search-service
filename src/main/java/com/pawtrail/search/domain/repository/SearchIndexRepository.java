@@ -1,7 +1,10 @@
 package com.pawtrail.search.domain.repository;
 
 import com.pawtrail.search.domain.model.IndexedPlace;
+import com.pawtrail.search.domain.model.ReviewStats;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 검색 색인을 저장하는 약속입니다.
@@ -24,4 +27,24 @@ public interface SearchIndexRepository {
      * @return 실제로 넣거나 덮어쓴 행 수입니다.
      */
     int saveAllIfNewer(List<IndexedPlace> places);
+
+    /**
+     * 평점을 갈아 끼웁니다. 재색인이 review 에서 받은 값을 씁니다.
+     *
+     * place 에서 온 칸과 place 수정 시각은 건드리지 않습니다.
+     * 평점과 후기 수가 지금 담긴 것과 같으면 쓰지 않습니다.
+     *
+     * @return 실제로 바뀐 행 수입니다. 색인에 없는 장소는 세지 않습니다.
+     */
+    int updateReviewStats(List<ReviewStats> stats);
+
+    /**
+     * 주어진 장소들 밖에 있는 색인 행을 셉니다. 재색인이 한 바퀴 동안 본 장소를 넘깁니다.
+     *
+     * 지우지 않고 세기만 합니다.
+     * place 는 장소를 지우지 않아 운영에서는 0 이어야 합니다.
+     * 0 이 아니면 로컬에서 place_db 를 다시 적재해 식별자가 새로 발급된 흔적이라,
+     * 색인을 비우고 재색인해 맞춥니다.
+     */
+    long countOutside(Collection<UUID> placeIds);
 }
