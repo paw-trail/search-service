@@ -15,7 +15,11 @@ public enum SearchErrorCode implements ErrorCode {
 
     // 재색인이 이미 돌고 있음
     // 두 대 어느 쪽에서 돌고 있든 잠금이 하나라 같은 답이 나감
-    REINDEX_ALREADY_RUNNING(HttpStatus.CONFLICT, "이미 실행 중인 재색인이 있습니다.");
+    REINDEX_ALREADY_RUNNING(HttpStatus.CONFLICT, "이미 실행 중인 재색인이 있습니다."),
+
+    // verdict 를 부르지 못함
+    // 판정 없이 카드만 내면 「동반 가능만」 필터가 조용히 틀린 결과를 내므로 검색 자체를 502 로 답함
+    VERDICT_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "동반 판정을 불러오지 못했습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

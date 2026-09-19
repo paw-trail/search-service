@@ -1,12 +1,19 @@
 package com.pawtrail.search.infrastructure.persistence;
 
 import com.pawtrail.common.audit.AuditorProvider;
+import com.pawtrail.search.domain.enums.SearchSort;
+import com.pawtrail.search.domain.model.IndexedCard;
 import com.pawtrail.search.domain.model.IndexedPlace;
 import com.pawtrail.search.domain.model.ReviewStats;
+import com.pawtrail.search.domain.model.SearchFilter;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -153,6 +160,71 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
         String[] ids = placeIds.stream().map(UUID::toString).toArray(String[]::new);
         Long count = jdbcTemplate.queryForObject(COUNT_OUTSIDE, new MapSqlParameterSource("placeIds", ids), Long.class);
         return count == null ? 0 : count;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> findIds(SearchFilter filter, SearchSort sort, int offset, int limit) {
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        String sql = "SELECT place_id FROM search_index WHERE " + SearchSql.where(filter, params)
+                + " ORDER BY " + SearchSql.orderBy(sort)
+                + " LIMIT :limit OFFSET :offset";
+        params.addValue("limit", limit).addValue("offset", offset);
+        return jdbcTemplate.queryForList(sql, params, UUID.class);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> findAllIds(SearchFilter filter, SearchSort sort) {
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        String sql = "SELECT place_id FROM search_index WHERE " + SearchSql.where(filter, params)
+                + " ORDER BY " + SearchSql.orderBy(sort);
+        return jdbcTemplate.queryForList(sql, params, UUID.class);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long count(SearchFilter filter) {
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM search_index WHERE " + SearchSql.where(filter, params), params, Long.class);
+        return count == null ? 0 : count;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, IndexedCard> findCards(Collection<UUID> placeIds, SearchFilter filter) {
+        if (placeIds.isEmpty()) {
+            return Map.of();
+        }
+
+        MapSqlParameterSource params = new MapSqlParameterSource("placeIds", List.copyOf(placeIds));
+        String distance = "NULL";
+        if (filter.hasLocation()) {
+            params.addValue("lat", filter.lat()).addValue("lon", filter.lon());
+            distance = "ST_Distance(geom, " + SearchSql.POINT + ")";
+        }
+        // 표시 주소는 도로명, 없으면 지번 — place 상세와 같은 규칙
+        String sql = "SELECT place_id, name, place_type, COALESCE(address_road, address_jibun) AS address, image_url, "
+                + distance + " AS distance_m, rating_avg, review_count, data_base_date"
+                + " FROM search_index WHERE place_id IN (:placeIds)";
+
+        Map<UUID, IndexedCard> cards = new HashMap<>();
+        jdbcTemplate.query(sql, params, rs -> {
+            Object distanceM = rs.getObject("distance_m");
+            IndexedCard card = new IndexedCard(
+                    rs.getObject("place_id", UUID.class),
+                    rs.getString("name"),
+                    rs.getString("place_type"),
+                    rs.getString("address"),
+                    rs.getString("image_url"),
+                    distanceM == null ? null : Math.round(((Number) distanceM).doubleValue()),
+                    rs.getObject("rating_avg", BigDecimal.class),
+                    rs.getInt("review_count"),
+                    rs.getObject("data_base_date", LocalDate.class));
+            cards.put(card.placeId(), card);
+        });
+        return cards;
     }
 
     private static SqlParameterSource parameters(IndexedPlace place, LocalDateTime now, String actor) {

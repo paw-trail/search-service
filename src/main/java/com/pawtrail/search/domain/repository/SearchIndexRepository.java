@@ -1,9 +1,13 @@
 package com.pawtrail.search.domain.repository;
 
+import com.pawtrail.search.domain.enums.SearchSort;
+import com.pawtrail.search.domain.model.IndexedCard;
 import com.pawtrail.search.domain.model.IndexedPlace;
 import com.pawtrail.search.domain.model.ReviewStats;
+import com.pawtrail.search.domain.model.SearchFilter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -47,4 +51,31 @@ public interface SearchIndexRepository {
      * 색인을 비우고 재색인해 맞춥니다.
      */
     long countOutside(Collection<UUID> placeIds);
+
+    /**
+     * 조건에 맞는 장소를 줄 세워 한 쪽만 돌려줍니다. 판정 필터도 인기순도 아닐 때 씁니다.
+     *
+     * 폐업한 장소는 늘 뺍니다.
+     */
+    List<UUID> findIds(SearchFilter filter, SearchSort sort, int offset, int limit);
+
+    /**
+     * 조건에 맞는 장소를 줄 세워 전부 돌려줍니다.
+     *
+     * 판정 필터가 걸렸거나 인기순일 때 씁니다. 판정과 조회수가 색인 밖에 있어
+     * 후보를 다 뽑아 메모리에서 거르고 줄 세운 뒤에야 쪽을 자를 수 있습니다(search ㉣ · ㉺).
+     */
+    List<UUID> findAllIds(SearchFilter filter, SearchSort sort);
+
+    /**
+     * 조건에 맞는 장소 수입니다.
+     */
+    long count(SearchFilter filter);
+
+    /**
+     * 장소들의 카드 값입니다. 위치가 있으면 거리를 함께 셉니다.
+     *
+     * @return 장소 식별자로 찾는 카드입니다. 차례는 부르는 쪽이 맞춥니다.
+     */
+    Map<UUID, IndexedCard> findCards(Collection<UUID> placeIds, SearchFilter filter);
 }
