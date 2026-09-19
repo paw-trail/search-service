@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.pawtrail.common.exception.CustomException;
 import com.pawtrail.search.application.dto.output.SearchCardOutput;
 import com.pawtrail.search.domain.model.IndexedCard;
+import com.pawtrail.search.domain.model.RankedWindow;
 import com.pawtrail.search.domain.provider.VerdictProvider;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import com.pawtrail.search.domain.repository.TrendingStore;
@@ -56,7 +57,7 @@ class TrendingServiceTest {
     @Test
     @DisplayName("순위를 넉넉히 읽어 폐업한 곳을 빼고 요청한 수만큼, 판정은 그 곳들만 묻는다")
     void 폐업을_빼고_채운다() {
-        when(trendingStore.top("11", 0, 4)).thenReturn(List.of(FIRST, CLOSED, THIRD));
+        when(trendingStore.top("11", 0, 4)).thenReturn(new RankedWindow(List.of(FIRST, CLOSED, THIRD), true));
         when(searchIndexRepository.findCards(any(), any())).thenReturn(Map.of(FIRST, card(FIRST), THIRD, card(THIRD)));
         when(verdictProvider.findByPlaceIds(List.of(FIRST, THIRD), List.of(MALTESE))).thenReturn(Map.of());
 
@@ -71,8 +72,8 @@ class TrendingServiceTest {
         UUID fourth = UUID.fromString("01a09015-0000-7000-8000-000000000004");
         UUID fifth = UUID.fromString("01a09015-0000-7000-8000-000000000005");
         UUID gone = UUID.fromString("01a09015-0000-7000-8000-000000000009");
-        when(trendingStore.top(null, 0, 2)).thenReturn(List.of(CLOSED, gone));
-        when(trendingStore.top(null, 2, 2)).thenReturn(List.of(fourth, fifth));
+        when(trendingStore.top(null, 0, 2)).thenReturn(new RankedWindow(List.of(CLOSED, gone), false));
+        when(trendingStore.top(null, 2, 2)).thenReturn(new RankedWindow(List.of(fourth, fifth), false));
         when(searchIndexRepository.findCards(any(), any()))
                 .thenReturn(Map.of())
                 .thenReturn(Map.of(fourth, card(fourth), fifth, card(fifth)));
@@ -84,9 +85,25 @@ class TrendingServiceTest {
     }
 
     @Test
+    @DisplayName("구간이 짧아도 순위가 끝나지 않았으면 다음 구간을 읽는다 — 식별자로 못 읽은 원소가 빠진 구간")
+    void 짧은_구간은_끝이_아니다() {
+        UUID fourth = UUID.fromString("01a09015-0000-7000-8000-000000000004");
+        when(trendingStore.top(null, 0, 4)).thenReturn(new RankedWindow(List.of(FIRST), false));
+        when(trendingStore.top(null, 4, 4)).thenReturn(new RankedWindow(List.of(fourth), true));
+        when(searchIndexRepository.findCards(any(), any()))
+                .thenReturn(Map.of(FIRST, card(FIRST)))
+                .thenReturn(Map.of(fourth, card(fourth)));
+        when(verdictProvider.findByPlaceIds(List.of(FIRST, fourth), List.of())).thenReturn(Map.of());
+
+        List<SearchCardOutput> cards = trendingService.trending(null, 2, null);
+
+        assertThat(cards).extracting(SearchCardOutput::placeId).containsExactly(FIRST, fourth);
+    }
+
+    @Test
     @DisplayName("순위가 끝나면 모자라도 거기서 멈춘다")
     void 순위가_끝나면_멈춘다() {
-        when(trendingStore.top(null, 0, 10)).thenReturn(List.of(FIRST));
+        when(trendingStore.top(null, 0, 10)).thenReturn(new RankedWindow(List.of(FIRST), true));
         when(searchIndexRepository.findCards(any(), any())).thenReturn(Map.of(FIRST, card(FIRST)));
         when(verdictProvider.findByPlaceIds(List.of(FIRST), List.of())).thenReturn(Map.of());
 

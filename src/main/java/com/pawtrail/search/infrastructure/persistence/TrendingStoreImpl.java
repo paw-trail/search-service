@@ -1,5 +1,6 @@
 package com.pawtrail.search.infrastructure.persistence;
 
+import com.pawtrail.search.domain.model.RankedWindow;
 import com.pawtrail.search.domain.repository.TrendingStore;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,11 +46,11 @@ public class TrendingStoreImpl implements TrendingStore {
     }
 
     @Override
-    public List<UUID> top(String sidoCode, int offset, int count) {
+    public RankedWindow top(String sidoCode, int offset, int count) {
         String key = sidoCode == null || sidoCode.isBlank() ? ALL : SIDO_PREFIX + sidoCode;
         Set<String> members = redisTemplate.opsForZSet().reverseRange(key, offset, offset + count - 1L);
         if (members == null) {
-            return List.of();
+            return new RankedWindow(List.of(), true);
         }
         List<UUID> placeIds = new ArrayList<>(members.size());
         for (String member : members) {
@@ -58,7 +59,8 @@ public class TrendingStoreImpl implements TrendingStore {
                 placeIds.add(placeId);
             }
         }
-        return placeIds;
+        // 끝은 거르기 전의 원래 원소 수로 판단함 — 거른 길이로 보면 아래 순위가 남아 있어도 끝으로 오판함
+        return new RankedWindow(placeIds, members.size() < count);
     }
 
     @Override

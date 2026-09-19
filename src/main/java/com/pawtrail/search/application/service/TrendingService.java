@@ -5,6 +5,7 @@ import com.pawtrail.common.exception.CustomException;
 import com.pawtrail.search.application.dto.output.SearchCardOutput;
 import com.pawtrail.search.domain.model.IndexedCard;
 import com.pawtrail.search.domain.model.PlaceVerdict;
+import com.pawtrail.search.domain.model.RankedWindow;
 import com.pawtrail.search.domain.model.SearchFilter;
 import com.pawtrail.search.domain.provider.VerdictProvider;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
@@ -64,7 +65,8 @@ public class TrendingService {
         List<UUID> shown = new ArrayList<>();
         Map<UUID, IndexedCard> cards = new HashMap<>();
         for (int round = 0; round < MAX_ROUNDS && shown.size() < size; round++) {
-            List<UUID> ranked = trendingStore.top(sidoCode, round * window, window);
+            RankedWindow rankedWindow = trendingStore.top(sidoCode, round * window, window);
+            List<UUID> ranked = rankedWindow.placeIds();
             if (!ranked.isEmpty()) {
                 Map<UUID, IndexedCard> found = searchIndexRepository.findCards(ranked, NO_LOCATION);
                 for (UUID placeId : ranked) {
@@ -74,8 +76,8 @@ public class TrendingService {
                     }
                 }
             }
-            if (ranked.size() < window) {
-                // 순위가 끝남
+            if (rankedWindow.last()) {
+                // 순위가 끝남 — 거른 뒤의 길이가 아니라 저장소가 준 원래 개수로 판단한 값
                 break;
             }
         }

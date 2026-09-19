@@ -1,5 +1,6 @@
 package com.pawtrail.search.domain.repository;
 
+import com.pawtrail.search.domain.model.RankedWindow;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +31,10 @@ public interface TrendingStore {
      *
      * @param sidoCode 비어 있으면 전국입니다.
      * @param offset   0 부터 세는 순위 자리입니다.
-     * @param count    읽을 수입니다. 돌려받은 수가 이보다 적으면 순위가 끝난 것입니다.
+     * @param count    읽을 수입니다.
+     * @return 구간의 장소와 순위가 끝났는지입니다. 끝은 거르기 전의 원래 원소 수로 판단합니다.
      */
-    List<UUID> top(String sidoCode, int offset, int count);
+    RankedWindow top(String sidoCode, int offset, int count);
 
     /**
      * 장소들의 전국 조회수입니다. 인기순 정렬이 씁니다.
