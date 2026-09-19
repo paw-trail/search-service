@@ -89,7 +89,12 @@ public class SearchController {
         List<String> words = q == null ? List.of() : Arrays.stream(q.trim().split("\\s+"))
                 .filter(word -> !word.isBlank())
                 .toList();
-        Integer radiusM = lat != null && lon != null && radius == null ? DEFAULT_RADIUS_M : radius;
+        // 삼항 연산자로 쓰지 않음 — int 상수와 Integer 가 섞이면 결과가 int 가 되어
+        // 반경을 안 보낸 요청(null)을 풀다가 NullPointerException 이 남
+        Integer radiusM = radius;
+        if (radiusM == null && lat != null && lon != null) {
+            radiusM = DEFAULT_RADIUS_M;
+        }
         return new SearchFilter(words, blankToNull(sidoCode), blankToNull(sigunguName), lat, lon, radiusM,
                 placeTypes, facilities);
     }
