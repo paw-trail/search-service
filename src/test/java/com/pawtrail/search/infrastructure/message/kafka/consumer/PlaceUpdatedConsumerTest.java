@@ -1,7 +1,9 @@
 package com.pawtrail.search.infrastructure.message.kafka.consumer;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.pawtrail.common.message.EventEnvelope;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.listener.BatchListenerFailedException;
 
 /**
  * 묶어 받은 place.updated 에서 다시 읽을 장소를 추리는 규칙을 검사합니다.
@@ -48,15 +51,31 @@ class PlaceUpdatedConsumerTest {
     }
 
     @Test
-    @DisplayName("payload 나 placeId 가 빈 이벤트는 거른다")
-    void 빈_이벤트는_거른다() {
+    @DisplayName("장소 식별자가 없는 이벤트를 만나면 그 앞까지 처리하고 그 자리를 담아 실패한다")
+    void 잘못된_이벤트는_그_자리에서_실패() {
         when(searchIndexService.refresh(anyList())).thenReturn(IndexRefreshResult.EMPTY);
         EventEnvelope<PlaceUpdatedMessage> noData = new EventEnvelope<>(
                 EventEnvelope.generateUuidV7(), "place.updated", LocalDateTime.now(), "Place", null, null);
 
-        consumer.consume(Arrays.asList(envelope(PLACE_A), noData, envelope(null), null));
+        // 조용히 버리면 처리된 것으로 넘어가 DLQ 에도 안 남음
+        // 자리를 담아야 오류 처리기가 앞은 넘기고 이 한 건만 재시도 뒤 .dlq 로 보냄
+        assertThatThrownBy(() -> consumer.consume(Arrays.asList(envelope(PLACE_A), envelope(PLACE_B), noData, envelope(PLACE_A))))
+                .isInstanceOf(BatchListenerFailedException.class)
+                .extracting(e -> ((BatchListenerFailedException) e).getIndex())
+                .isEqualTo(2);
 
-        verify(searchIndexService).refresh(List.of(PLACE_A));
+        verify(searchIndexService).refresh(List.of(PLACE_A, PLACE_B));
+    }
+
+    @Test
+    @DisplayName("첫 이벤트부터 잘못됐으면 아무것도 읽지 않고 0번째로 실패한다")
+    void 첫_이벤트가_잘못되면_바로_실패() {
+        assertThatThrownBy(() -> consumer.consume(Arrays.asList(null, envelope(PLACE_A))))
+                .isInstanceOf(BatchListenerFailedException.class)
+                .extracting(e -> ((BatchListenerFailedException) e).getIndex())
+                .isEqualTo(0);
+
+        verifyNoInteractions(searchIndexService);
     }
 
     private static EventEnvelope<PlaceUpdatedMessage> envelope(UUID placeId) {

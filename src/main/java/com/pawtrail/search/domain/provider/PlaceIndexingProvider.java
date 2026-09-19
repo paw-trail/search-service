@@ -30,6 +30,7 @@ public interface PlaceIndexingProvider {
      *
      * @param after 이 id 다음부터입니다. null 이면 처음부터입니다.
      * @param size  한 쪽의 크기입니다. 받은 수가 이보다 적으면 끝입니다.
+     *              그래서 원소를 거르지 않습니다 — 깨진 원소가 있으면 PLACE_UNAVAILABLE 입니다.
      */
     List<IndexedPlace> findPageAfter(UUID after, int size);
 }

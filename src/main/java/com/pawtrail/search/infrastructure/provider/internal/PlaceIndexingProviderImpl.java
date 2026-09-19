@@ -45,22 +45,51 @@ public class PlaceIndexingProviderImpl implements PlaceIndexingProvider {
             return List.of();
         }
         // 식별자를 ids=a&ids=b 로 되풀이해 실음 — place 의 @RequestParam List<UUID> 가 그 꼴을 받음
-        return call(uri -> uri.path(PATH).queryParam("ids", placeIds).build(),
-                "장소 " + placeIds.size() + "곳");
+        return toPlaces(call(uri -> uri.path(PATH).queryParam("ids", placeIds).build(),
+                "장소 " + placeIds.size() + "곳"));
     }
 
     @Override
     public List<IndexedPlace> findPageAfter(UUID after, int size) {
-        return call(uri -> {
+        String what = "이어받기 after=" + after + " size=" + size;
+        return toPage(call(uri -> {
             UriBuilder builder = uri.path(PATH).queryParam("size", size);
             if (after != null) {
                 builder.queryParam("after", after);
             }
             return builder.build();
-        }, "이어받기 after=" + after + " size=" + size);
+        }, what), what);
     }
 
-    private List<IndexedPlace> call(Function<UriBuilder, URI> uri, String what) {
+    /**
+     * 몇 곳을 다시 읽은 결과입니다. 깨진 원소는 없는 장소처럼 거릅니다.
+     *
+     * 받은 수로 무엇을 판단하지 않는 자리라 걸러도 해가 없습니다.
+     */
+    static List<IndexedPlace> toPlaces(List<PlaceIndexingResponse> items) {
+        return items.stream()
+                .filter(Objects::nonNull)
+                .map(PlaceIndexingResponse::toIndexedPlace)
+                .toList();
+    }
+
+    /**
+     * 이어받기 한 쪽입니다. 원소를 거르지 않고, 깨진 원소가 있으면 PLACE_UNAVAILABLE 로 실패합니다.
+     *
+     * 재색인은 받은 수가 쪽 크기보다 적으면 끝으로 봅니다.
+     * 깨진 원소를 걸러 500 이 499 가 되면 마지막 쪽으로 오판해, 뒤를 안 읽은 채 재색인이 성공으로 끝납니다.
+     * 식별자가 없는 원소는 다음 쪽을 물을 기준도 못 되므로 같은 실패로 봅니다.
+     */
+    static List<IndexedPlace> toPage(List<PlaceIndexingResponse> items, String what) {
+        boolean broken = items.stream().anyMatch(item -> item == null || item.placeId() == null);
+        if (broken) {
+            log.warn("색인용 이어받기 응답에 비어 있는 원소가 있습니다: {} · {}개 중", what, items.size());
+            throw new CustomException(SearchErrorCode.PLACE_UNAVAILABLE);
+        }
+        return items.stream().map(PlaceIndexingResponse::toIndexedPlace).toList();
+    }
+
+    private List<PlaceIndexingResponse> call(Function<UriBuilder, URI> uri, String what) {
         CommonApiResponse<List<PlaceIndexingResponse>> response;
         try {
             response = restClient.get()
@@ -77,9 +106,6 @@ public class PlaceIndexingProviderImpl implements PlaceIndexingProvider {
             throw new CustomException(SearchErrorCode.PLACE_UNAVAILABLE);
         }
 
-        return response.getData().stream()
-                .filter(Objects::nonNull)
-                .map(PlaceIndexingResponse::toIndexedPlace)
-                .toList();
+        return response.getData();
     }
 }

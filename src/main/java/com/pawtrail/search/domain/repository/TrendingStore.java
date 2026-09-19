@@ -24,11 +24,15 @@ public interface TrendingStore {
     void increment(UUID placeId, String sidoCode);
 
     /**
-     * 조회수가 많은 차례로 장소를 돌려줍니다.
+     * 조회수가 많은 차례로 장소를 한 구간 돌려줍니다.
+     *
+     * 순위에는 폐업했거나 색인에서 빠진 장소가 섞일 수 있어, 부르는 쪽이 구간을 이어 읽으며 채웁니다.
      *
      * @param sidoCode 비어 있으면 전국입니다.
+     * @param offset   0 부터 세는 순위 자리입니다.
+     * @param count    읽을 수입니다. 돌려받은 수가 이보다 적으면 순위가 끝난 것입니다.
      */
-    List<UUID> top(String sidoCode, int size);
+    List<UUID> top(String sidoCode, int offset, int count);
 
     /**
      * 장소들의 전국 조회수입니다. 인기순 정렬이 씁니다.

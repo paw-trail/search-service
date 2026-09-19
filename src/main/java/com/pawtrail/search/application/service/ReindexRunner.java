@@ -66,19 +66,13 @@ public class ReindexRunner {
                 }
                 after = lastPlaceId(page);
                 if (after == null) {
-                    // 마지막 원소에 식별자가 없으면 다음 쪽을 물을 수 없음, 같은 쪽을 되풀이하지 않게 멈춤
-                    log.warn("재색인 이어받기 기준이 비어 여기서 멈춥니다: {}쪽", pages);
-                    break;
+                    // 꽉 찬 쪽인데 다음 쪽을 물을 기준이 없음 — 끝까지 봤다고 할 수 없으므로 place 를 못 부른 것과 같게 멈춤
+                    return stopped(trigger, pages, read, skipped, written, startedNanos,
+                            "이어받기 기준(마지막 장소 식별자)이 비어 있음");
                 }
             }
         } catch (CustomException e) {
-            // place 를 못 부르면 멈춤
-            // 평점과 행 세기는 한 바퀴를 다 봤을 때만 뜻이 있어 건너뜀, 이미 쓴 것은 남음
-            ReindexResult stopped = new ReindexResult(trigger, false, pages, read, skipped, written,
-                    0, true, -1, elapsedMillis(startedNanos));
-            log.warn("재색인이 멈췄습니다 ({}): place {}쪽 · {}곳 읽음 · 덮어씀 {}곳 · reason={}",
-                    trigger, pages, read, written, e.getMessage());
-            return stopped;
+            return stopped(trigger, pages, read, skipped, written, startedNanos, e.getMessage());
         }
 
         RatingOutcome ratings = refreshRatings(seen);
@@ -119,6 +113,16 @@ public class ReindexRunner {
             changed += searchIndexRepository.updateReviewStats(rows);
         }
         return new RatingOutcome(changed, false);
+    }
+
+    // 한 바퀴를 다 보지 못하고 멈춘 결과
+    // 평점과 행 세기는 한 바퀴를 다 봤을 때만 뜻이 있어 건너뜀 — 반만 본 목록으로 평점을 갈거나 행을 세면 숫자가 틀림
+    // 이미 쓴 행은 남음, 수정 시각 규칙을 지켜 쓴 것이라 되돌릴 필요가 없음
+    private static ReindexResult stopped(ReindexTrigger trigger, int pages, int read, int skipped, int written,
+                                         long startedNanos, String reason) {
+        log.warn("재색인이 멈췄습니다 ({}): place {}쪽 · {}곳 읽음 · 덮어씀 {}곳 · reason={}",
+                trigger, pages, read, written, reason);
+        return new ReindexResult(trigger, false, pages, read, skipped, written, 0, true, -1, elapsedMillis(startedNanos));
     }
 
     private static UUID lastPlaceId(List<IndexedPlace> page) {

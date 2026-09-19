@@ -3,6 +3,7 @@ package com.pawtrail.search.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -55,13 +56,42 @@ class TrendingServiceTest {
     @Test
     @DisplayName("순위를 넉넉히 읽어 폐업한 곳을 빼고 요청한 수만큼, 판정은 그 곳들만 묻는다")
     void 폐업을_빼고_채운다() {
-        when(trendingStore.top("11", 4)).thenReturn(List.of(FIRST, CLOSED, THIRD));
+        when(trendingStore.top("11", 0, 4)).thenReturn(List.of(FIRST, CLOSED, THIRD));
         when(searchIndexRepository.findCards(any(), any())).thenReturn(Map.of(FIRST, card(FIRST), THIRD, card(THIRD)));
         when(verdictProvider.findByPlaceIds(List.of(FIRST, THIRD), List.of(MALTESE))).thenReturn(Map.of());
 
         List<SearchCardOutput> cards = trendingService.trending("11", 2, List.of(MALTESE));
 
         assertThat(cards).extracting(SearchCardOutput::placeId).containsExactly(FIRST, THIRD);
+    }
+
+    @Test
+    @DisplayName("첫 구간이 폐업 · 색인 밖으로 가득하면 다음 구간을 이어 읽어 채운다")
+    void 다음_구간을_이어_읽는다() {
+        UUID fourth = UUID.fromString("01a09015-0000-7000-8000-000000000004");
+        UUID fifth = UUID.fromString("01a09015-0000-7000-8000-000000000005");
+        UUID gone = UUID.fromString("01a09015-0000-7000-8000-000000000009");
+        when(trendingStore.top(null, 0, 2)).thenReturn(List.of(CLOSED, gone));
+        when(trendingStore.top(null, 2, 2)).thenReturn(List.of(fourth, fifth));
+        when(searchIndexRepository.findCards(any(), any()))
+                .thenReturn(Map.of())
+                .thenReturn(Map.of(fourth, card(fourth), fifth, card(fifth)));
+        when(verdictProvider.findByPlaceIds(List.of(fourth), List.of())).thenReturn(Map.of());
+
+        List<SearchCardOutput> cards = trendingService.trending(null, 1, null);
+
+        assertThat(cards).extracting(SearchCardOutput::placeId).containsExactly(fourth);
+    }
+
+    @Test
+    @DisplayName("순위가 끝나면 모자라도 거기서 멈춘다")
+    void 순위가_끝나면_멈춘다() {
+        when(trendingStore.top(null, 0, 10)).thenReturn(List.of(FIRST));
+        when(searchIndexRepository.findCards(any(), any())).thenReturn(Map.of(FIRST, card(FIRST)));
+        when(verdictProvider.findByPlaceIds(List.of(FIRST), List.of())).thenReturn(Map.of());
+
+        assertThat(trendingService.trending(null, 5, null)).hasSize(1);
+        verify(trendingStore, never()).top(any(), eq(10), anyInt());
     }
 
     @Test

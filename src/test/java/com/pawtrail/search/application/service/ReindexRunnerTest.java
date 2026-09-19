@@ -117,6 +117,23 @@ class ReindexRunnerTest {
         verify(searchIndexRepository, never()).countOutside(anyCollection());
     }
 
+    @Test
+    @DisplayName("꽉 찬 쪽의 마지막 식별자가 비면 다음 쪽을 물을 수 없으니 멈추고 평점과 행 세기를 건너뛴다")
+    void 이어받기_기준이_비면_멈춘다() {
+        List<IndexedPlace> page = new java.util.ArrayList<>(places(0, 499));
+        page.add(new IndexedPlace(null, "식별자 없음", List.of(), "PARK", null, null, "11", "종로구",
+                new BigDecimal("37.5000000"), new BigDecimal("127.0000000"), List.of(), "ACTIVE",
+                null, null, null, UPDATED_AT));
+        when(placeIndexingProvider.findPageAfter(null, 500)).thenReturn(page);
+
+        ReindexResult result = reindexRunner.run(ReindexTrigger.SCHEDULE);
+
+        // 끝까지 봤다고 할 수 없음 — 반만 본 목록으로 평점을 갈거나 행을 세면 숫자가 틀림
+        assertThat(result.completed()).isFalse();
+        verifyNoInteractions(reviewStatsProvider);
+        verify(searchIndexRepository, never()).countOutside(anyCollection());
+    }
+
     // UUID v7 모양을 흉내 낸 고정 식별자임, 순서대로 만들어 이어받기 기준을 읽기 쉽게 함
     private static UUID uuid(int n) {
         return new UUID(0x01a0901500007000L, 0x8000000000000000L | n);

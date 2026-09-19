@@ -9,6 +9,8 @@ import com.pawtrail.search.domain.model.SearchFilter;
 import com.pawtrail.search.domain.provider.VerdictProvider;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import com.pawtrail.search.domain.repository.TrendingStore;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,10 @@ public class TrendingService {
     /** 인기 급상승의 최대 수입니다(search ㉼). */
     public static final int MAX_SIZE = 50;
 
+    // 순위를 몇 구간까지 이어 읽을지 — 구간 하나가 요청 수의 두 배라 최대 열 배까지 봄
+    // 순위 위쪽이 폐업 · 색인 밖으로 가득해도 끝없이 읽지 않게 막음
+    private static final int MAX_ROUNDS = 5;
+
     // 위치 없이 카드를 읽을 때 넘기는 빈 조건 — 거리를 셀 기준점이 없음
     private static final SearchFilter NO_LOCATION = new SearchFilter(List.of(), null, null, null, null, null, null, null);
 
@@ -43,7 +49,7 @@ public class TrendingService {
      * 조회수가 많은 장소를 검색 카드 모양으로 돌려줍니다.
      *
      * 반려동물을 주면 판정을 싣고, 없으면 판정 없이 장소 칸만 싣습니다(search ㉼ · ㉢).
-     * 폐업했거나 색인에 없는 장소는 빼고, 그래도 모자라지 않게 순위를 넉넉히 읽습니다.
+     * 폐업했거나 색인에 없는 장소는 빼고, 모자라면 순위를 구간으로 더 읽어 채웁니다(최대 열 배).
      *
      * @param sidoCode 비어 있으면 전국입니다.
      */
@@ -53,9 +59,26 @@ public class TrendingService {
             throw new CustomException(CommonErrorCode.VALIDATION_FAILED);
         }
 
-        List<UUID> ranked = trendingStore.top(sidoCode, size * 2);
-        Map<UUID, IndexedCard> cards = ranked.isEmpty() ? Map.of() : searchIndexRepository.findCards(ranked, NO_LOCATION);
-        List<UUID> shown = ranked.stream().filter(cards::containsKey).limit(size).toList();
+        // 폐업했거나 색인에서 빠진 장소를 건너뛰며 요청한 수가 찰 때까지 순위를 구간으로 이어 읽음
+        int window = size * 2;
+        List<UUID> shown = new ArrayList<>();
+        Map<UUID, IndexedCard> cards = new HashMap<>();
+        for (int round = 0; round < MAX_ROUNDS && shown.size() < size; round++) {
+            List<UUID> ranked = trendingStore.top(sidoCode, round * window, window);
+            if (!ranked.isEmpty()) {
+                Map<UUID, IndexedCard> found = searchIndexRepository.findCards(ranked, NO_LOCATION);
+                for (UUID placeId : ranked) {
+                    if (shown.size() < size && found.containsKey(placeId)) {
+                        shown.add(placeId);
+                        cards.put(placeId, found.get(placeId));
+                    }
+                }
+            }
+            if (ranked.size() < window) {
+                // 순위가 끝남
+                break;
+            }
+        }
         if (shown.isEmpty()) {
             return List.of();
         }

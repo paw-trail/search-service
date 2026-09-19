@@ -45,9 +45,9 @@ public class TrendingStoreImpl implements TrendingStore {
     }
 
     @Override
-    public List<UUID> top(String sidoCode, int size) {
+    public List<UUID> top(String sidoCode, int offset, int count) {
         String key = sidoCode == null || sidoCode.isBlank() ? ALL : SIDO_PREFIX + sidoCode;
-        Set<String> members = redisTemplate.opsForZSet().reverseRange(key, 0, size - 1L);
+        Set<String> members = redisTemplate.opsForZSet().reverseRange(key, offset, offset + count - 1L);
         if (members == null) {
             return List.of();
         }
