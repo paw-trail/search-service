@@ -11,6 +11,8 @@ import java.util.UUID;
  * @param name         이름입니다.
  * @param placeType    종류입니다.
  * @param address      표시 주소입니다. 도로명, 없으면 지번입니다 — place 상세와 같은 규칙입니다.
+ * @param lat          위도입니다. place 가 저장한 소수 7자리 그대로입니다.
+ * @param lon          경도입니다.
  * @param imageUrl     대표 사진입니다.
  * @param distanceM    검색한 위치에서의 거리(미터)입니다. 위치를 안 보냈으면 null 입니다.
  * @param ratingAvg    평점 평균입니다. 후기가 없으면 null 입니다.
@@ -21,6 +23,8 @@ public record IndexedCard(UUID placeId,
                           String name,
                           String placeType,
                           String address,
+                          BigDecimal lat,
+                          BigDecimal lon,
                           String imageUrl,
                           Long distanceM,
                           BigDecimal ratingAvg,
