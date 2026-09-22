@@ -11,13 +11,16 @@ import java.util.UUID;
 /**
  * 검색 결과 카드 한 장입니다. 명세의 검색 응답 원소입니다.
  *
- * 이름 · 주소 · 사진 · 평점은 색인에서, 판정 · 충돌 · 한 줄 근거 · 준비물은 verdict 에서 옵니다.
+ * 이름 · 주소 · 좌표 · 사진 · 평점은 색인에서, 판정 · 충돌 · 한 줄 근거 · 준비물은 verdict 에서 옵니다.
  * place 는 부르지 않습니다. 카드에 쓰는 값이 전부 색인에 옮겨져 있습니다.
  *
  * @param placeId         장소 식별자입니다.
  * @param name            이름입니다.
  * @param placeType       종류입니다. 동물병원(VET)이면 화면이 판정 배지를 그리지 않습니다.
  * @param address         표시 주소입니다.
+ * @param lat             장소 위도입니다. 웹 화면은 이 좌표와 브라우저가 받은 내 위치로 거리를 직접 계산합니다.
+ *                        내 위치를 서버로 보내지 않기 위해서입니다.
+ * @param lon             장소 경도입니다.
  * @param imageUrl        대표 사진입니다.
  * @param distanceM       검색한 위치에서의 거리(미터)입니다. 위치를 안 보냈으면 null 입니다.
  * @param verdicts        반려동물별 판정입니다. 반려동물 없이 검색했으면 빈 목록입니다.
@@ -32,6 +35,8 @@ public record SearchCardOutput(UUID placeId,
                                String name,
                                String placeType,
                                String address,
+                               BigDecimal lat,
+                               BigDecimal lon,
                                String imageUrl,
                                Long distanceM,
                                List<PetVerdict> verdicts,
@@ -44,8 +49,8 @@ public record SearchCardOutput(UUID placeId,
 
     public static SearchCardOutput of(IndexedCard card, PlaceVerdict verdict) {
         return new SearchCardOutput(card.placeId(), card.name(), card.placeType(), card.address(),
-                card.imageUrl(), card.distanceM(), verdict.verdicts(), verdict.hasConflict(),
-                verdict.evidenceSummary(), verdict.requiredItems(), card.ratingAvg(), card.reviewCount(),
-                card.dataBaseDate());
+                card.lat(), card.lon(), card.imageUrl(), card.distanceM(),
+                verdict.verdicts(), verdict.hasConflict(), verdict.evidenceSummary(), verdict.requiredItems(),
+                card.ratingAvg(), card.reviewCount(), card.dataBaseDate());
     }
 }

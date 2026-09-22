@@ -17,6 +17,7 @@ import com.pawtrail.search.domain.model.RankedWindow;
 import com.pawtrail.search.domain.provider.VerdictProvider;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import com.pawtrail.search.domain.repository.TrendingStore;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,6 +65,8 @@ class TrendingServiceTest {
         List<SearchCardOutput> cards = trendingService.trending("11", 2, List.of(MALTESE));
 
         assertThat(cards).extracting(SearchCardOutput::placeId).containsExactly(FIRST, THIRD);
+        // 메인 화면의 인기 급상승도 같은 카드라 좌표가 실림 — 거리는 브라우저가 잼
+        assertThat(cards.get(0).lat()).isEqualByComparingTo(new BigDecimal("37.5662952"));
     }
 
     @Test
@@ -134,6 +137,7 @@ class TrendingServiceTest {
     }
 
     private static IndexedCard card(UUID placeId) {
-        return new IndexedCard(placeId, "장소", "PARK", "주소", null, null, null, 0, null);
+        return new IndexedCard(placeId, "장소", "PARK", "주소", new BigDecimal("37.5662952"), new BigDecimal("126.9779451"),
+                null, null, null, 0, null);
     }
 }
