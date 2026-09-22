@@ -24,6 +24,7 @@ import com.pawtrail.search.domain.model.SearchFilter;
 import com.pawtrail.search.domain.provider.VerdictProvider;
 import com.pawtrail.search.domain.repository.SearchIndexRepository;
 import com.pawtrail.search.domain.repository.TrendingStore;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,6 +50,8 @@ class SearchServiceTest {
     private static final SearchFilter NO_FILTER = new SearchFilter(List.of(), null, null, null, null, null, null, null);
     private static final UUID MALTESE = UUID.fromString("01a0726a-1111-7000-8000-000000000001");
     private static final UUID RETRIEVER = UUID.fromString("01a0726a-1111-7000-8000-000000000002");
+    private static final BigDecimal LAT = new BigDecimal("37.5662952");
+    private static final BigDecimal LON = new BigDecimal("126.9779451");
 
     @Mock
     private SearchIndexRepository searchIndexRepository;
@@ -61,6 +64,23 @@ class SearchServiceTest {
 
     @InjectMocks
     private SearchService searchService;
+
+    @Test
+    @DisplayName("카드에 색인의 장소 좌표를 그대로 싣는다 — 웹 화면이 이 좌표로 내 위치와의 거리를 직접 잰다")
+    void 카드에_좌표를_싣는다() {
+        when(searchIndexRepository.count(NO_FILTER)).thenReturn(1L);
+        when(searchIndexRepository.findIds(NO_FILTER, SearchSort.RATING, 0, 20)).thenReturn(List.of(place(1)));
+        when(searchIndexRepository.findCards(List.of(place(1)), NO_FILTER)).thenReturn(cards(1));
+        when(verdictProvider.findByPlaceIds(List.of(place(1)), List.of())).thenReturn(Map.of());
+
+        SearchCardOutput card = searchService.search(new SearchCommand(NO_FILTER, null, null, null, 0, 20))
+                .content().get(0);
+
+        // 위치를 안 보냈으니 거리는 비고 좌표는 실림
+        assertThat(card.distanceM()).isNull();
+        assertThat(card.lat()).isEqualByComparingTo(LAT);
+        assertThat(card.lon()).isEqualByComparingTo(LON);
+    }
 
     @Test
     @DisplayName("판정 필터도 인기순도 아니면 SQL 로 한 쪽만 뽑고 그 쪽만 판정한다")
@@ -167,7 +187,7 @@ class SearchServiceTest {
 
     private static Map<UUID, IndexedCard> cards(int... ns) {
         return IntStream.of(ns).mapToObj(n -> new IndexedCard(place(n), "장소 " + n, "PARK", "주소 " + n,
-                        null, null, null, 0, null))
+                        LAT, LON, null, null, null, 0, null))
                 .collect(Collectors.toMap(IndexedCard::placeId, Function.identity()));
     }
 

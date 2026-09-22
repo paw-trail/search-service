@@ -140,14 +140,24 @@ class SearchQueryTest {
     }
 
     @Test
-    @DisplayName("카드는 도로명이 없으면 지번을 쓰고, 위치가 있을 때만 거리를 미터로 싣는다")
+    @DisplayName("카드는 도로명이 없으면 지번을 쓰고, 넣은 좌표를 그대로 싣고, 위치가 있을 때만 거리를 미터로 싣는다")
     void 카드() {
         Map<UUID, IndexedCard> cards = searchIndexRepository.findCards(List.of(YEOUIDO, CAFE), NEAR_YEOUIDO);
 
         assertThat(cards.get(CAFE).address()).isEqualTo("서울특별시 영등포구 당산동 1-1");
+        // 색인에 (경도, 위도) 순서로 넣으므로 꺼낼 때 둘이 뒤바뀌면 여기서 걸림
+        assertThat(cards.get(YEOUIDO).lat()).isEqualByComparingTo(new BigDecimal("37.5285"));
+        assertThat(cards.get(YEOUIDO).lon()).isEqualByComparingTo(new BigDecimal("126.9327"));
+        assertThat(cards.get(CAFE).lat()).isEqualByComparingTo(new BigDecimal("37.5340"));
+        assertThat(cards.get(CAFE).lon()).isEqualByComparingTo(new BigDecimal("126.9020"));
         assertThat(cards.get(YEOUIDO).distanceM()).isZero();
         assertThat(cards.get(CAFE).distanceM()).isBetween(2_500L, 3_000L);
-        assertThat(searchIndexRepository.findCards(List.of(YEOUIDO), noFilter()).get(YEOUIDO).distanceM()).isNull();
+
+        // 좌표는 위치를 보냈는지와 상관없이 늘 실림 — 웹 화면은 위치를 안 보내고 이 좌표로 거리를 직접 잼
+        IndexedCard withoutLocation = searchIndexRepository.findCards(List.of(YEOUIDO), noFilter()).get(YEOUIDO);
+        assertThat(withoutLocation.distanceM()).isNull();
+        assertThat(withoutLocation.lat()).isEqualByComparingTo(new BigDecimal("37.5285"));
+        assertThat(withoutLocation.lon()).isEqualByComparingTo(new BigDecimal("126.9327"));
     }
 
     @Test

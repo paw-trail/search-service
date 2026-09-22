@@ -209,7 +209,11 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
             distance = "ST_Distance(geom, " + SearchSql.POINT + ")";
         }
         // 표시 주소는 도로명, 없으면 지번 — place 상세와 같은 규칙
-        String sql = "SELECT place_id, name, place_type, COALESCE(address_road, address_jibun) AS address, image_url, "
+        // 좌표는 색인에 (경도, 위도) 순서로 넣었으므로 위도가 ST_Y · 경도가 ST_X
+        // place 가 저장한 numeric(10, 7) 로 되돌려 소수 7자리 그대로 냄
+        String sql = "SELECT place_id, name, place_type, COALESCE(address_road, address_jibun) AS address,"
+                + " CAST(ST_Y(CAST(geom AS geometry)) AS numeric(10, 7)) AS lat,"
+                + " CAST(ST_X(CAST(geom AS geometry)) AS numeric(10, 7)) AS lon, image_url, "
                 + distance + " AS distance_m, rating_avg, review_count, data_base_date"
                 + " FROM search_index WHERE place_id IN (:placeIds) AND status = 'ACTIVE'";
 
@@ -221,6 +225,8 @@ public class SearchIndexRepositoryImpl implements SearchIndexRepository {
                     rs.getString("name"),
                     rs.getString("place_type"),
                     rs.getString("address"),
+                    rs.getObject("lat", BigDecimal.class),
+                    rs.getObject("lon", BigDecimal.class),
                     rs.getString("image_url"),
                     distanceM == null ? null : Math.round(((Number) distanceM).doubleValue()),
                     rs.getObject("rating_avg", BigDecimal.class),
